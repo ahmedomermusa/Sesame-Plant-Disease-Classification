@@ -16,17 +16,14 @@ import time
 import os
 import copy
 
-path = "Image_Classificaton/"
+path = "/content/gdrive/My Drive/Image_Classification/"
 #Folds are fixed, each folder contains split 4 folds in the training and 1 fold in the val
 folds = ['data/fold1/', 'data/fold2/', 'data/fold3/', 'data/fold4/', 'data/fold5/']
 
 for fold in folds:
+    print("Fold:",fold)
     data_dir = path+fold
-    load_data(data_dir)
-  
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    #Visualize some training data
+    dataloaders, data_sizes, class_names = load_data(data_dir)
 
     # Get a batch of training data
     inputs, classes = next(iter(dataloaders['train']))
@@ -36,6 +33,10 @@ for fold in folds:
 
     #show images
     imshow(out, title=[class_names[x] for x in classes])
+  
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    #Visualize some training data
 
 
     model_ft = models.resnet50(pretrained=True)
@@ -91,8 +92,7 @@ for fold in folds:
     plt.show()
 
 
-
-
+   
 #Methods/Functions
 
 
@@ -130,7 +130,10 @@ def load_data(data_dir = "Image_Classification/"):
                                                  shuffle=True, num_workers=4)
                   for x in ['train', 'val']}
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
+
     class_names = image_datasets['train'].classes
+
+    return dataloaders, dataset_sizes, class_names
   
 def imshow(inp, title=None):
     #show an image
