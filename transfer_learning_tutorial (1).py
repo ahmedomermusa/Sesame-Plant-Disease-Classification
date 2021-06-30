@@ -1,6 +1,9 @@
 #!usr/bin/env python
 
 from __future__ import print_function, division
+# from autoaugment import RandAugment
+from randaugment import RandAugment, ImageNetPolicy
+import imgaug.augmenters as iaa
 
 import torch
 import torch.nn as nn
@@ -49,9 +52,13 @@ This dataset is a very small subset of imagenet.
 data_transforms = {
     'train': transforms.Compose([
         transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
+        transforms.RandomHorizontalFlip(p=0.5),
+        # transforms.ColorJitter(brightness=0.5), 
+        # transforms.RandomGrayscale(p=0.2),
+        ImageNetPolicy(),
+        transforms.AutoAugment(),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) 
     ]),
     'val': transforms.Compose([
         transforms.Resize(256),
@@ -61,8 +68,8 @@ data_transforms = {
     ]),
 }
 
-n_folds = 5
-folds = [1,2,3,4,5]
+# n_folds = 5
+# folds = [1,2,3,4,5]
 
 
 #data_dir = '/content/drive/My Drive/UDS/Image Classification'
@@ -123,7 +130,7 @@ In the following, parameter ``scheduler`` is an LR scheduler object from
 
 """
 
-def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
+def train_model(model, criterion, optimizer, scheduler, epsilon = 1e-7,num_epochs=25):
     since = time.time()
 
     best_model_wts = copy.deepcopy(model.state_dict())
@@ -140,6 +147,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
             else:
                 model.eval()   # Set model to evaluate mode
 
+            TP,TN,FN,FP=0,0,0,0
             running_loss = 0.0
             running_corrects = 0
 
@@ -164,16 +172,46 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
                         optimizer.step()
 
                 # statistics
+                               
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
+
+                # TP predict and label are 1 at the same time
+                TP += ((preds == 1) & (labels.data == 1)).cpu().sum()
+                # TN predict and label are both 0
+                TN += ((preds == 0) & (labels.data == 0)).cpu().sum()
+                # FN    predict 0 label 1
+                FN += ((preds == 0) & (labels.data == 1)).cpu().sum()
+                # FP    predict 1 label 0
+                FP += ((preds == 1) & (labels.data == 0)).cpu().sum()
+                
             if phase == 'train':
                 scheduler.step()
+            
+            
+            # y_pred=preds
+            # y_true=labels.data
 
+            # tp = (y_true * y_pred).sum().to(torch.float32)
+            # tn = ((1 - y_true) * (1 - y_pred)).sum().to(torch.float32)
+            # fp = ((1 - y_true) * y_pred).sum().to(torch.float32)
+            # fn = (y_true * (1 - y_pred)).sum().to(torch.float32)
+            # epsilon = 1e-7
+            # precision = tp / (tp + fp + epsilon)
+            # recall = tp / (tp + fn + epsilon)
+            # f1 = 2* (precision*recall) / (precision + recall + epsilon)
+             
+            
+            p = TP / (TP + FP)
+            r = TP / (TP + FN)
+            F1 = 2 * r * p / (r + p)
+            acc = (TP + TN) / (TP + TN + FP + FN)
+            # print(acc.item())
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
+            print('{} Loss: {:.4f} Acc: {:.4f}  F1_score:{:.4f}'.format(
+                phase, epoch_loss, epoch_acc,F1))
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
@@ -190,7 +228,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
-
 """Visualizing the model predictions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -261,7 +298,7 @@ minute.
 
 """
 
-model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=25)
+model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=100)
 
 visualize_model(model_ft)
 
@@ -279,12 +316,12 @@ You can read more about this in the documentation
 
 """
 
-model_conv = torchvision.models.resnet18(pretrained=True)
+model_conv = torchvision.models.resnet18(pretrained=True,progress=True)
 for param in model_conv.parameters():
     param.requires_grad = False
 
 # Parameters of newly constructed modules have requires_grad=True by default
-num_ftrs = model_conv.fc.in_features
+num_ftrs = model_conv.fc.in_featuresGoogle Cloud TPU v3-32/v3-32 Pod command:
 model_conv.fc = nn.Linear(num_ftrs, 3)
 
 model_conv = model_conv.to(device)
@@ -310,7 +347,7 @@ network. However, forward does need to be computed.
 """
 
 model_conv = train_model(model_conv, criterion, optimizer_conv,
-                         exp_lr_scheduler, num_epochs=25)
+                         exp_lr_scheduler, num_epochs=100)
 
 visualize_model(model_conv)
 
