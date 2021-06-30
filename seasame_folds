@@ -68,7 +68,7 @@ for fold in folds:
         param.requires_grad = False
 
     # Parameters of newly constructed modules have requires_grad=True by default
-    num_ftrs = model_conv.fc.in_featuresGoogle Cloud TPU v3-32/v3-32 Pod command:
+    num_ftrs = model_conv.fc.in_features
     model_conv.fc = nn.Linear(num_ftrs, len(class_names))
 
     model_conv = model_conv.to(device)
