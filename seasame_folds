@@ -96,7 +96,7 @@ for fold in folds:
 #Methods/Functions
 
 
-def load_data(data_dir = "Image_Classification/")
+def load_data(data_dir = "Image_Classification/"):
     #This function loads the data and prepares it.
     #Expected format of directory: two directories 'train', 'val' each with a folder for each class
 
