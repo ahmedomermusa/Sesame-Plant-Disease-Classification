@@ -276,7 +276,7 @@ model_ft = models.resnet50(pretrained=True)
 num_ftrs = model_ft.fc.in_features
 # Here the size of each output sample is set to 2.
 # Alternatively, it can be generalized to nn.Linear(num_ftrs, len(class_names)).
-model_ft.fc = nn.Linear(num_ftrs, 3)
+model_ft.fc = nn.Linear(num_ftrs, len(class_names))
 
 model_ft = model_ft.to(device)
 
@@ -322,7 +322,7 @@ for param in model_conv.parameters():
 
 # Parameters of newly constructed modules have requires_grad=True by default
 num_ftrs = model_conv.fc.in_featuresGoogle Cloud TPU v3-32/v3-32 Pod command:
-model_conv.fc = nn.Linear(num_ftrs, 3)
+model_conv.fc = nn.Linear(num_ftrs, len(class_names))
 
 model_conv = model_conv.to(device)
 
