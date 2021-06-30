@@ -32,7 +32,7 @@ for fold in folds:
     out = torchvision.utils.make_grid(inputs)
 
     #show images
-    imshow(out, title=[class_names[x] for x in classes])
+    imshow(out, title=[class_names[x] for x in classes], path+"output_images/fold"+fold[-2]+".png")
   
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -134,7 +134,7 @@ def load_data(data_dir = "Image_Classification/"):
 
     return dataloaders, dataset_sizes, class_names
   
-def imshow(inp, title=None):
+def imshow(inp, title=None, save_dir = "/1.png"):
     #show an image
     """Imshow for Tensor."""
     inp = inp.numpy().transpose((1, 2, 0))
@@ -145,7 +145,8 @@ def imshow(inp, title=None):
     plt.imshow(inp)
     if title is not None:
         plt.title(title)
-    plt.pause(0.001)  # pause a bit so that plots are updated
+    plt.savefig(save_dir, format = "png", bbox_inches='tight') #tight stops savefig from cropping long title
+    plt.show()
 
 def train_model(model, dataset_sizes, criterion, optimizer, scheduler, epsilon = 1e-7,num_epochs=25):
     #This function trains the model
