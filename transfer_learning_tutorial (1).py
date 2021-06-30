@@ -1,9 +1,16 @@
 #!usr/bin/env python
 
+# License: BSD
+# Author: Sasank Chilamkurthy
+
 from __future__ import print_function, division
 # from autoaugment import RandAugment
+# from RandAugment import RandAugment
 from randaugment import RandAugment, ImageNetPolicy
-import imgaug.augmenters as iaa
+# import imgaug.augmenters as iaa
+# from imgaug import augmenters as iaa
+# import imgaug as ia
+
 
 import torch
 import torch.nn as nn
@@ -55,8 +62,13 @@ data_transforms = {
         transforms.RandomHorizontalFlip(p=0.5),
         # transforms.ColorJitter(brightness=0.5), 
         # transforms.RandomGrayscale(p=0.2),
-        ImageNetPolicy(),
-        transforms.AutoAugment(),
+        # ImageNetPolicy(),  #Randomly choose one of the best 24 Sub-policies on ImageNet
+        # transforms.AutoAugment(),
+        RandAugment(),      # randaugment is adaptived from UDA tensorflow implementation: # https://github.com/jizongFox/uda
+                              
+
+        # iaa.RandAugment(n=3, m=7),
+        
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) 
     ]),
