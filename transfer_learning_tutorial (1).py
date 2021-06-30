@@ -328,7 +328,7 @@ You can read more about this in the documentation
 
 """
 
-model_conv = torchvision.models.resnet18(pretrained=True,progress=True)
+model_conv = torchvision.models.resnet50(pretrained=True,progress=True)
 for param in model_conv.parameters():
     param.requires_grad = False
 
