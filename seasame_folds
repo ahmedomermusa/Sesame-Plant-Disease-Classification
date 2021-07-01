@@ -16,7 +16,9 @@ import time
 import os
 import copy
 
+#remember to change the path before running! with '/' in the end
 path = "/content/gdrive/My Drive/Image_Classification/"
+output_images_path = "/content/gdrive/My Drive/testimages/"
 #Folds are fixed, each folder contains split 4 folds in the training and 1 fold in the val
 folds = ['data/fold1/', 'data/fold2/', 'data/fold3/', 'data/fold4/', 'data/fold5/']
 
@@ -32,7 +34,7 @@ for fold in folds:
     out = torchvision.utils.make_grid(inputs)
 
     #show images
-    imshow(out, title=[class_names[x] for x in classes], path+"output_images/fold"+fold[-2]+".png")
+    imshow(out, title=[class_names[x] for x in classes], output_images_path+"fold"+fold[-2]+".png")
   
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -61,7 +63,7 @@ for fold in folds:
 
     model_ft = train_model(model_ft, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=100)
 
-    visualize_model(model_ft)
+    visualize_model(model_ft, title = "visualize_model_fc_only_fold{}".format(fold[-2]), out_dir = output_images_path)
 
 
     model_conv = torchvision.models.resnet18(pretrained=True,progress=True)
@@ -86,7 +88,7 @@ for fold in folds:
     model_conv = train_model(model_conv, dataset_sizes, criterion, optimizer_conv,
                              exp_lr_scheduler, num_epochs=100)
 
-    visualize_model(model_conv)
+    visualize_model(model_conv, title = "visualize_model_fc_only_fold{}".format(fold[-2]), out_dir = output_images_path)
 
     plt.ioff()
     plt.show()
@@ -249,7 +251,7 @@ def train_model(model, dataset_sizes, criterion, optimizer, scheduler, epsilon =
     model.load_state_dict(best_model_wts)
     return model
     
-def visualize_model(model, num_images=6):
+def visualize_model(model, num_images=6, out_dir ="", title = ""):
     was_training = model.training
     model.eval()
     images_so_far = 0
@@ -268,7 +270,7 @@ def visualize_model(model, num_images=6):
                 ax = plt.subplot(num_images//2, 2, images_so_far)
                 ax.axis('off')
                 ax.set_title('predicted: {}'.format(class_names[preds[j]]))
-                imshow(inputs.cpu().data[j])
+                imshow(inputs.cpu().data[j], save_dir=out_dir+"{}_{}_predicted:{}.png".format(title, i,class_names[preds[j]]), title = "{}_{}_predicted:{}.png".format(title, i,class_names[preds[j]]))
 
                 if images_so_far == num_images:
                     model.train(mode=was_training)
