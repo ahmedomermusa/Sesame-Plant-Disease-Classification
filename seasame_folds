@@ -34,7 +34,7 @@ for fold in folds:
     out = torchvision.utils.make_grid(inputs)
 
     #show images
-    imshow(out, title=[class_names[x] for x in classes], output_images_path+"fold"+fold[-2]+".png")
+    imshow(out, title=[class_names[x] for x in classes], save_dir= output_images_path+"fold"+fold[-2]+".png")
   
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
