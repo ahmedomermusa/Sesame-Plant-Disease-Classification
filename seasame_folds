@@ -65,14 +65,14 @@ def load_data(data_dir="Image_Classification/",test_path):
                                               data_transforms[x])
                       for x in ['train', 'val']}
     
-    test_datasets={'Test':datasets.ImageFolder(os.path.join(test_path, 'test'),
+    test_datasets={'test':datasets.ImageFolder(os.path.join(test_path, 'test'),
                                               data_transforms['test'])}
     
     dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4,
                                                   shuffle=True, num_workers=4)
                    for x in ['train', 'val']}
     
-    test_loader= {'Test': torch.utils.data.DataLoader(test_datasets['test'], batch_size=4,
+    test_loader= {'test': torch.utils.data.DataLoader(test_datasets['test'], batch_size=4,
                                                   shuffle=True, num_workers=4)}
     
     dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
