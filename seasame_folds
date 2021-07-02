@@ -25,7 +25,7 @@ folds = ['data/fold1/', 'data/fold2/', 'data/fold3/', 'data/fold4/', 'data/fold5
 # Methods/Functions
 
 
-def load_data(data_dir="Image_Classification/"):
+def load_data(data_dir="Image_Classification/",test_path):
     # This function loads the data and prepares it.
     # Expected format of directory: two directories 'train', 'val' each with a folder for each class
 
@@ -63,15 +63,23 @@ def load_data(data_dir="Image_Classification/"):
 
     image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                                               data_transforms[x])
-                      for x in ['train', 'val', 'Test']}
+                      for x in ['train', 'val']}
+    
+    test_datasets={'Test':datasets.ImageFolder(os.path.join(test_path, 'Test'),
+                                              data_transforms['Test'])}
+    
     dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=4,
                                                   shuffle=True, num_workers=4)
-                   for x in ['train', 'val', 'Test']}
-    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val', 'Test']}
+                   for x in ['train', 'val']}
+    
+    test_loader= {'Test': torch.utils.data.DataLoader(test_datasets['Test'], batch_size=4,
+                                                  shuffle=True, num_workers=4)}
+    
+    dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 
     class_names = image_datasets['train'].classes
 
-    return dataloaders, dataset_sizes, class_names
+    return dataloaders,test_loader, dataset_sizes, class_names
 
 
 def imshow(inp, title=None, save_dir="/1.png"):
@@ -89,7 +97,7 @@ def imshow(inp, title=None, save_dir="/1.png"):
     plt.show()
 
 
-def train_model(model, dataloaders ,dataset_sizes, criterion, optimizer, scheduler, epsilon=1e-7, num_epochs=25):
+def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, scheduler, epsilon=1e-7, num_epochs=25):
     # This function trains the model
 
     since = time.time()
@@ -218,7 +226,7 @@ def visualize_model(model, num_images=6, out_dir="", title=""):
         model.train(mode=was_training)
 
 
-def test_model(dataloaders):
+def test_model(test_loader):
     # TODO: implement test and test accuracy evaluation
     with torch.no_grad():
         correct = 0
@@ -242,7 +250,7 @@ def test_model(dataloaders):
 for fold in folds:
     print("Fold:", fold)
     data_dir = path + fold
-    dataloaders, dataset_sizes, class_names = load_data(data_dir)
+    dataloaders,test_loader, dataset_sizes, class_names = load_data(data_dir,path)
 
     # Get a batch of training data
     inputs, classes = next(iter(dataloaders['train']))
@@ -307,5 +315,5 @@ for fold in folds:
     plt.show()
 
     #test the model
-    test_model(dataloaders)
+    test_model(test_loader)
 
