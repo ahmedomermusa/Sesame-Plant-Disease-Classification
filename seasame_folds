@@ -225,11 +225,12 @@ def visualize_model(model, num_images=6, out_dir="", title=""):
                     return
         model.train(mode=was_training)
 
-
+        
 def test_model(test_loader):
     # TODO: implement test and test accuracy evaluation
     with torch.no_grad():
-        correct = 0
+    TP,TN,FN,FP=0,0,0,0
+    correct = 0
     total = 0
     for images, labels in test_loader['test']:
         images = images.to(device)
@@ -238,11 +239,24 @@ def test_model(test_loader):
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
+
+        # TP predict and label are 1 at the same time
+        TP += ((predicted == 1) & (labels.data == 1)).cpu().sum()
+        # TN predict and label are both 0
+        TN += ((predicted == 0) & (labels.data == 0)).cpu().sum()
+        # FN    predict 0 label 1
+        FN += ((predicted == 0) & (labels.data == 1)).cpu().sum()
+        # FP    predict 1 label 0
+        FP += ((predicted == 1) & (labels.data == 0)).cpu().sum()
+        
         if total == 1000:
             break
 
-    print('Accuracy of the network on the {} test images: {} %'.format(total, 100 * correct / total))
-
+    p = TP / (TP + FP)
+    r = TP / (TP + FN)
+    F1 = 2 * r * p / (r + p)
+    print('Accuracy of the network on the {} test images: {} % The F_score : {} '.format(total, 100 * correct / total, F1))
+    
 
     
 #itertae the folds :
