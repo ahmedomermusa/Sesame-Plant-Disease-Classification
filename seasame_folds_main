@@ -25,7 +25,7 @@ folds = ['/data/fold1', '/data/fold2', '/data/fold3', '/data/fold4', '/data/fold
 # Methods/Functions
 
 
-def load_data(data_dir="Image_Classification/",test_path):
+def load_data(data_dir,test_path):
     # This function loads the data and prepares it.
     # Expected format of directory: two directories 'train', 'val' each with a folder for each class
 
@@ -227,8 +227,8 @@ def visualize_model(model, num_images=6, out_dir="", title=""):
 
         
 def test_model(test_loader):
-    # TODO: implement test and test accuracy evaluation
-    with torch.no_grad():
+	# TODO: implement test and test accuracy evaluation
+	with torch.no_grad():
 		TP,TN,FN,FP=0,0,0,0
 		correct = 0
 		total = 0
