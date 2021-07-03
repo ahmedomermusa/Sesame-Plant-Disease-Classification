@@ -273,7 +273,7 @@ for fold_number, fold in enumerate(folds):
     out = torchvision.utils.make_grid(inputs)
 
     # show images
-    imshow(out, title=[class_names[x] for x in classes], save_dir=output_images_path + "fold" + fold_number + ".png")
+    imshow(out, title=[class_names[x] for x in classes], save_dir=output_images_path + "fold" + str(fold_number) + ".png")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
