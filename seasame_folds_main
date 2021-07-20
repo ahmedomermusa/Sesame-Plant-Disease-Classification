@@ -38,6 +38,7 @@ def imshow(inp, title=None, save_dir="/home/hlcv_team030/hlcv_team030/1.png"):
         plt.title(title)
     plt.savefig(save_dir, format="png", bbox_inches='tight')  # tight stops savefig from cropping long title
     plt.show()
+    plt.close('all')
 
 
 self_data_path = '/home/hlcv_team030/hlcv_team030/sesame_plants'
@@ -333,6 +334,7 @@ def plot_train_val_acc(model_stats, title = "Training and validation accuracies"
     plt.legend()
     plt.savefig(save_dir, format="png", bbox_inches='tight')
     plt.show()
+    plt.close('all')
     
 def plot_loss_accuracy_curves(model_stats, title = "Loss Accuracy Curve", save_dir = output_images_path+"/loss_accuracy_curve.png"):
     plt.figure()
@@ -350,6 +352,7 @@ def plot_loss_accuracy_curves(model_stats, title = "Loss Accuracy Curve", save_d
     plt.title(title)
     plt.savefig(save_dir, format="png", bbox_inches='tight')
     plt.show()
+    plt.close('all')
 
 def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, scheduler, epsilon=1e-7, num_epochs=25):
     # This function trains the model
@@ -487,10 +490,10 @@ def test_model(test_loader, model):
 			_, predicted = torch.max(outputs.data, 1)
 			total += labels.size(0)
 			correct += (predicted == labels).sum().item()
-			print(labels.data)
+			#print(labels.data)
 			all_labels.append(labels)
 			all_preds.append(predicted )
-		print(all_labels)
+		#print(all_labels)
 		#F1_score = f1_score(all_labels, all_preds, average='micro')
 		F1_score = 0
 		print('Accuracy of the network on the {} test images: {} % The F_score : {} '.format(total, 100 * correct / total, F1_score))
@@ -588,7 +591,7 @@ for fold_number, fold in enumerate(folds):
     print("Only FC layer")
 
     model_conv, model_stats = train_model(model_conv, dataloaders,dataset_sizes, criterion, optimizer_conv,
-                             exp_lr_scheduler, num_epochs=5)
+                             exp_lr_scheduler, num_epochs=20)
 
     plot_train_val_acc(model_stats, save_dir = output_images_path+"/FC-fold{}-train_val_acc_plot.png".format(fold_number))
     plot_loss_accuracy_curves(model_stats, save_dir = output_images_path+"/FC-fold{}-loss_accuracy_plot.png".format(fold_number))
@@ -598,6 +601,7 @@ for fold_number, fold in enumerate(folds):
 
     plt.ioff()
     plt.show()
+    plt.close('all')
 
     #test the model
     print("Test after training only last layer")
