@@ -341,7 +341,7 @@ def plot_train_val_acc(model_stats, title = "Training and validation accuracies"
 def plot_loss_accuracy_curves(model_stats, title = "Loss Accuracy Curve", save_dir = output_images_path+"/loss_accuracy_curve.png"):
     plt.figure()
     plt.subplot(211)
-    plt.plot(model_stats['loss_history'])
+    plt.plot(model_stats['val_loss_history'])
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     
@@ -381,7 +381,7 @@ def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, schedule
     # This function trains the model
 
     since = time.time()
-    model_stats = {'train_acc_history': [], 'val_acc_history': [], 'loss_history':[]}
+    model_stats = {'train_acc_history': [], 'val_acc_history': [], 'val_loss_history':[]}
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
@@ -456,9 +456,10 @@ def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, schedule
 
             if phase == 'train':
                 model_stats['train_acc_history'].append(epoch_acc)
+                model_stats['train_loss_history'].append(loss)
             else:
                 model_stats['val_acc_history'].append(epoch_acc)
-            model_stats['loss_history'].append(loss)
+                model_stats['val_loss_history'].append(loss)
 
             # deep copy the model
             if phase == 'val' and epoch_acc > best_acc:
