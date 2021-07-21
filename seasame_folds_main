@@ -25,6 +25,8 @@ import os
 import copy
 from sklearn.utils.multiclass import type_of_target
 
+print("Using mixup fixed corrects")
+
 def imshow(inp, title=None, save_dir="/home/hlcv_team030/hlcv_team030/1.png"):
     # show an image
     """Imshow for Tensor."""
@@ -354,6 +356,27 @@ def plot_loss_accuracy_curves(model_stats, title = "Loss Accuracy Curve", save_d
     plt.show()
     plt.close('all')
 
+def mixup_data(x, y, alpha=1.0, use_cuda=True):
+    '''Returns mixed inputs, pairs of targets, and lambda'''
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        lam = 1
+
+    batch_size = x.size()[0]
+    if use_cuda:
+        index = torch.randperm(batch_size).cuda()
+    else:
+        index = torch.randperm(batch_size)
+
+    mixed_x = lam * x + (1 - lam) * x[index, :]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
 def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, scheduler, epsilon=1e-7, num_epochs=25):
     # This function trains the model
 
@@ -384,15 +407,21 @@ def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, schedule
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
+                mixed_inputs, y_a, y_b, lam = mixup_data(inputs, labels)
+
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward
                 # track history if only in train
                 with torch.set_grad_enabled(phase == 'train'):
-                    outputs = model(inputs)
+                    #outputs = model(inputs)
+                    outputs = model(mixed_inputs)
                     _, preds = torch.max(outputs, 1)
-                    loss = criterion(outputs, labels)
+                    #loss = criterion(outputs, labels)
+
+                    #mixed_loss
+                    loss = mixup_criterion(criterion, outputs, y_a, y_b, lam)
 
                     all_preds.append(preds)
                     all_labels.append(labels)
@@ -404,7 +433,8 @@ def train_model(model, dataloaders,dataset_sizes, criterion, optimizer, schedule
                 # statistics
 
                 running_loss += loss.item()
-                running_corrects += torch.sum(preds == labels.data)
+                #running_corrects += torch.sum(preds == labels.data)
+                running_corrects += (lam * torch.sum(preds == y_a.data) ) + ( (1-lam) * torch.sum(preds == y_b.data) )
                 
 
             if phase == 'train':
@@ -498,32 +528,11 @@ def test_model(test_loader, model):
 		F1_score = 0
 		print('Accuracy of the network on the {} test images: {} % The F_score : {} '.format(total, 100 * correct / total, F1_score))
 		
-
-def mixup_data(x, y, alpha=1.0, use_cuda=True):
-    '''Returns mixed inputs, pairs of targets, and lambda'''
-    if alpha > 0:
-        lam = np.random.beta(alpha, alpha)
-    else:
-        lam = 1
-
-    batch_size = x.size()[0]
-    if use_cuda:
-        index = torch.randperm(batch_size).cuda()
-    else:
-        index = torch.randperm(batch_size)
-
-    mixed_x = lam * x + (1 - lam) * x[index, :]
-    y_a, y_b = y, y[index]
-    return mixed_x, y_a, y_b, lam
-
-
-def mixup_criterion(criterion, pred, y_a, y_b, lam):
-    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
-
     
 #itertae the folds :dataloaders
 
 saved_model = model_ft
+num_epochs = 5
 
 for fold_number, fold in enumerate(folds):
     print("Fold:", fold)
@@ -553,15 +562,16 @@ for fold_number, fold in enumerate(folds):
     criterion = nn.CrossEntropyLoss()
 
     # Observe that all parameters are being optimized
-    optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+    optimizer_ft = optim.SGD(model_ft.parameters(), lr=1.0, momentum=0.9)
 
     # Decay LR by a factor of 0.1 every 7 epochs
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
-
+    #exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
+    cos_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer_ft, num_epochs)
+    
     print("Full Model:")
     print("Test before train")
     test_model(test_loader, model_ft)   
-    model_ft, model_stats = train_model(model_ft,dataloaders ,dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=5)
+    model_ft, model_stats = train_model(model_ft,dataloaders ,dataset_sizes, criterion, optimizer_ft, cos_lr_scheduler, num_epochs=num_epochs)
     print("Test after training:")
     test_model(test_loader, model_ft)
     plot_train_val_acc(model_stats, save_dir = output_images_path+"/FT-fold{}-train_val_acc_plot.png".format(fold_number))
@@ -584,14 +594,15 @@ for fold_number, fold in enumerate(folds):
 
     # Observe that only parameters of final layer are being optimized as
     # opposed to before.
-    optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=0.001, momentum=0.9)
+    optimizer_conv = optim.SGD(model_conv.fc.parameters(), lr=1.0, momentum=0.9)
 
     # Decay LR by a factor of 0.1 every 7 epochs
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
+    #exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
+    cos_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer_conv, num_epochs)
     print("Only FC layer")
 
     model_conv, model_stats = train_model(model_conv, dataloaders,dataset_sizes, criterion, optimizer_conv,
-                             exp_lr_scheduler, num_epochs=20)
+                             cos_lr_scheduler, num_epochs=num_epochs)
 
     plot_train_val_acc(model_stats, save_dir = output_images_path+"/FC-fold{}-train_val_acc_plot.png".format(fold_number))
     plot_loss_accuracy_curves(model_stats, save_dir = output_images_path+"/FC-fold{}-loss_accuracy_plot.png".format(fold_number))
